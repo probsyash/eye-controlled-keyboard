@@ -26,7 +26,7 @@ def print_result(result: HandLandmarkerResult, output_image: mp.Image, timestamp
 options = HandLandmarkerOptions(
     base_options=BaseOptions(model_asset_path='model_path/hand_landmarker.task'),
     running_mode=VisionRunningMode.LIVE_STREAM,
-    result_callback=print_result)
+    result_callback=print_result, num_hands=2)
 
 with HandLandmarker.create_from_options(options) as landmarker:
     latest_result = None
