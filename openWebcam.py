@@ -8,7 +8,7 @@ import time
 cam = cv2.VideoCapture(0)
 
 # Initialize the MediaPipe gesture recognizer
-model_path = '/model_path/hand_landmarker.task'
+model_path = 'model_path/hand_landmarker.task'
 
 # Set up the MediaPipe gesture recognizer
 BaseOptions = mp.tasks.BaseOptions
@@ -22,9 +22,11 @@ def print_result(result: HandLandmarkerResult, output_image: mp.Image, timestamp
     print('hand landmarker result: {}'.format(result))
 
 options = HandLandmarkerOptions(
-    base_options=BaseOptions(model_asset_path='/model_path/hand_landmarker.task'),
+    base_options=BaseOptions(model_asset_path='model_path/hand_landmarker.task'),
     running_mode=VisionRunningMode.LIVE_STREAM,
     result_callback=print_result)
+
+
 with HandLandmarker.create_from_options(options) as landmarker:
     while True:
         timestamp = int(time.time() * 1000)
@@ -39,6 +41,6 @@ with HandLandmarker.create_from_options(options) as landmarker:
         # Press 'q' to exit the loop
         if cv2.waitKey(1) == ord('q'):
             break
-
-        # Release the capture
-        cam.release()
+    
+    # Release the capture
+    cam.release()
