@@ -4,6 +4,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import time
 
+recording = False
+current_label = None
+
 # Connections for drawing hand landmarks
 HAND_CONNECTIONS = [
     (0, 1), (1, 2), (2, 3), (3, 4),        # thumb
@@ -29,7 +32,6 @@ VisionRunningMode = mp.tasks.vision.RunningMode
 
 # Create a hand landmarker instance with the live stream mode:
 def print_result(result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
-    print('hand landmarker result: {}'.format(result))
     global latest_result
     latest_result = result
 
@@ -40,10 +42,23 @@ options = HandLandmarkerOptions(
 
 with HandLandmarker.create_from_options(options) as landmarker:
     latest_result = None
+    file = open("dataStorage/landmarks.txt", "a")
 
     while True:
+        key = cv2.waitKey(1)
+
+        if key == ord('r'):
+            recording = not recording
+        elif key == ord('q'):
+            break
+        elif key != -1 and key < 128 and chr(key).isalpha():
+            current_label = chr(key)
+
         timestamp = int(time.time() * 1000)
         ret, frame = cam.read()
+
+        if not ret:
+            continue
 
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
         landmarker.detect_async(mp_image, timestamp)
@@ -51,11 +66,22 @@ with HandLandmarker.create_from_options(options) as landmarker:
         if latest_result:
             # Landmark drawer
             for hand_landmarks in latest_result.hand_landmarks:
+                coords = []
                 # Draw circles for each landmark
                 for landmark in hand_landmarks:
                     x = int(landmark.x * frame.shape[1])
                     y = int(landmark.y * frame.shape[0])
                     cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+                    if recording and current_label is not None:
+                        coords.append((landmark.x, landmark.y))
+
+                # Write all coords for this frame as one row
+                if coords:
+                    for i in range(len(coords)):
+                        if i == len(coords) - 1:
+                            file.write(str(coords[i][0]) + "," + str(coords[i][1]) + "," + current_label + "\n")
+                        else:
+                            file.write(str(coords[i][0]) + "," + str(coords[i][1]) + ",")
 
                 # Draw lines between connected landmarks
                 for start_index, end_index in HAND_CONNECTIONS:
@@ -67,13 +93,12 @@ with HandLandmarker.create_from_options(options) as landmarker:
                     y2 = int(end_landmark.y * frame.shape[0])
                     cv2.line(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
+        # Display label and recording status on screen
+        cv2.putText(frame, f"Label: {current_label} | Recording: {recording}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
         # Display the captured frame
         cv2.imshow('Camera', frame)
 
-        # Press 'q' to exit the loop
-        if cv2.waitKey(1) == ord('q'):
-            break
-    
     # Release the capture
     cam.release()
+    file.close()
