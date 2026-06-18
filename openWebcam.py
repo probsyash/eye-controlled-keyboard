@@ -10,7 +10,7 @@ from pynput.keyboard import Controller
 MODEL_PATH      = "model_path/hand_landmarker.task"
 CLASSIFIER_PATH = "dataStorage/hand_sign_classifier.pkl"
 LANDMARKS_PATH  = "dataStorage/landmarks.txt"
-STABLE_THRESHOLD = 20   # frames a sign must be held before typing
+STABLE_THRESHOLD = 100   # frames a sign must be held before typing
 
 HAND_CONNECTIONS = [
     (0, 1), (1, 2), (2, 3), (3, 4),        # thumb
@@ -112,6 +112,7 @@ with HandLandmarker.create_from_options(options) as landmarker:
                     else:
                         stable_letter = predicted_letter
                         stable_count  = 1
+                        last_typed    = None  # reset last typed when letter changes
 
                     if stable_count == STABLE_THRESHOLD and stable_letter != last_typed:
                         keyboard.type(stable_letter)
